@@ -1,0 +1,38 @@
+import argparse
+import os
+import logging
+import sys
+
+
+'''
+     steps
+
+    1) compile the python code to wat file and then to wasm file to run on webassembly.
+    2) we will run the canvas funcitons in ruuntime file and will use the compiled functions with the above wasm file to draw.
+    3) For making c code we need to have emcc (emscripten )  which convert's to three files  wasm, js, html
+    4) Finally to link all the files we have index.html and index.js in wasmlib folder.
+
+    5) You can run http server, python3 -m http.server , see the browser output by opening wasmlib
+
+
+'''
+
+'''
+        Currently supporting for square, rectangle functions
+        1) whaterver functions we are using in runtime, we need to export them when converting to wasm from emcc.
+        2) We can use those exported functions in index.js with Module.cwrap
+
+'''
+
+#filename = sys.argv[1]
+
+os.system("python3 src/pyyc/compile.py src/pyyc/input.py")
+if os.path.isfile('wasmlib/pyruntime.wasm') == False:
+    os.system('make -C cruntime clean')
+    print('Compiling WASM runtime...')
+    os.system('make -C cruntime wasm')
+print('Converting WAT to WASM...')
+os.system('wat2wasm ' + 'src/pyyc/input' + '.wat' + ' -o ' + 'input' + '.wasm')
+os.system('mv ' + 'input' + '.wasm ' + '  test/' )
+
+
