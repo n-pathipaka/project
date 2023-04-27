@@ -31,6 +31,9 @@ class Stack():
     def size(self):
         return len(self.list)
     
+    def getAll(self):
+        return self.list
+    
     def is_empty(self):
         return self.list == []
     
@@ -56,100 +59,152 @@ class WasmModule():
                 self.expressions.append(s)
 
 
-    def add(self, obj):
+    def add(self, obj, locals=[]):
         # dispatch based on type
         if isinstance(obj, list):
-            self.body(obj)
+            self.body(obj, locals)
         else:
             for attr in obj.keys():
                 if attr == 'module':
-                    self.module(obj[attr])
+                    self.module(obj[attr],locals)
                 elif attr == 'body':
-                    self.body(obj[attr])
+                    self.body(obj[attr],locals)
                 elif attr == 'import':
-                    self.imprt(obj[attr])
-                elif attr == 'func':
-                    self.func(obj[attr])
+                    self.imprt(obj[attr],locals)
+                    ## For now after import functions we will set the all the values in a function
+                    self.add_exp("(func $display")
+                    self.indent +=4
+                    ## just initialize all the locals in  the function
+                    if locals is not None:
+                        temp = set([])
+                        for l in locals:
+                            if l['name'] not in temp:
+                                temp.add(l['name'])
+                                self.decl_local(l)
                 elif attr == 'call':
-                    self.call(obj[attr])
+                    self.call(obj[attr],locals)
                 elif attr == 'const':
-                    self.const(obj[attr])
+                    self.const(obj[attr],locals)
                 elif attr == 'name':
-                    self.name(obj[attr])
+                    self.name(obj[attr],locals)
+                elif attr == 'assignment':
+                    self.assignment(obj[attr],locals)
+                elif attr == 'rval':
+                    self.rval(obj[attr],locals)
+                elif attr == 'bin_op':
+                    self.bin_op(obj[attr], locals)
+                elif attr == 'unary_op':
+                    self.unary_op(obj[attr], locals)
+                elif attr == 'if':
+                    self.if_(obj[attr], locals)
                 
             
 
-    def module(self, obj):
+    def module(self, obj,locals):
         self.add_exp("(module")
         self.indent += 4
         for attr in obj.keys():
-            self.add(obj)
-        self.indent -= 4
-        self.add_exp(")")
-
-    def body(self, obj):
-        for items in obj:
-            self.add(items)
-
-    def func(self, obj):
-        if 'fname' in obj.keys():
-            self.add_exp("(func $%s" % obj['fname'])
-        else:
-            self.add_exp("(func")
-        self.indent += 4
-        if 'params' in obj.keys():
-            for param in obj['params']:
-                self.decl_param(param)
-        if 'ret' in obj.keys():
-            self.decl_ret(obj['ret'])
-        if 'locals' in obj.keys():
-            for local in obj['locals']:
-                self.decl_local(local)
-        if 'body' in obj.keys():
-            self.body(obj['body'])
-        # export is pending
-        self.indent -= 4
-        self.add_exp(")")
-        self.add_exp('(export "%s" (func $%s))' % (obj['fname'], obj['fname']))
-    
-
-    def assignment(self, obj):
-        self.add_exp("(set_local $%s" % obj['lval'])
-        self.add(obj)
-
-    def rval(self, obj):
-        self.indent += 4
-        self.add(obj)
-        self.indent -= 4
-        self.add_exp(")")
-
-
-    def const(self, obj):
-        self.add_exp("(%s.const %s)" % (obj['type'], obj['value']))
-
-    def name(self, name):
-        self.add_exp("(local.get $%s)" % name)
-
-    def call(self, obj):
-        ## need to wrap the call function in a explcit function, need to think a better logic 
-       
-        self.add_exp("(func $display")
-        self.indent +=4
-
-        self.add_exp("(call $%s" % (obj['fname']))
-        self.indent += 4
-        self.add(obj['args'])
-        self.indent -= 4
-        self.add_exp(')')
+            self.add(obj,locals)
         self.indent -=4
         self.add_exp(')')
         self.add_exp("(export \"run\" (func $display))")
-  
+        self.indent -= 4
+        self.add_exp(")")
+
+    def body(self, obj,locals):
+        for items in obj:
+            self.add(items,locals)
+
+    def assignment(self, obj,locals):
+        self.add_exp("(local.set $%s" % obj['lval'])
+        self.add(obj,locals)
+
+    def rval(self, obj,locals):
+        self.indent += 4
+        self.add(obj,locals)
+        self.indent -= 4
+        self.add_exp(")")
+
+    def const(self, obj,locals):
+        self.add_exp("(%s.const %s)" % (obj['type'], obj['value']))
+
+    def name(self, name,locals):
+        self.add_exp("(local.get $%s)" % name)
+
+    def call(self, obj,locals):
+        ## need to wrap the call function in a explcit function, need to think a better logic , we cannot just call in web assembly 
+        ## it should be in explicit function.
+       
+        self.add_exp("(call $%s" % (obj['fname']))
+        self.indent += 4
+        self.add(obj['args'],locals)
+        self.indent -= 4
+        self.add_exp(')')
+        
+
+    def bin_op(self, obj, locals):
+        ## I think we can do greater and less than here only
+        if obj['op'] == 'add':
+            self.add_exp("(i32.add")
+        if obj['op'] == '==':
+            self.add_exp("(i32.eq")
+        if obj['op'] == '!=':
+            self.add_exp("(i32.ne")
+        if obj['op'] == '>':
+            self.add_exp("(i32.gt_u")
+        if obj['op'] == '<':
+            self.add_exp("(i32.lt_u")
+        if obj['op'] == '>=':
+            self.add_exp("(i32.ge_u")
+        if obj['op'] == '<=':
+            self.add_exp("(i32.le_u")
 
 
+        ## load the operands and add 
+        left = obj['left']
+        right = obj['right']
+        self.indent += 4
+        self.add(left)
+        self.add(right)
+        self.indent -= 4
+        self.add_exp(")")
 
+    def unary_op(self, obj, locals):
+        if obj['op'] == 'sub':
+            self.add_exp("(i32.sub")
+            self.indent += 4
+            self.add_exp('(i32.const 0)')
+            self.add(obj['operand'])
+            self.indent -= 4
+            self.add_exp(")")
 
-    def imprt(self, obj):
+    def if_(self, obj, locals):
+        self.add_exp("(if")
+        self.indent += 4
+        self.add_exp("(i32.eq") 
+        self.add(obj['cond'])
+        self.add_exp('(i32.const 1)')
+        self.add_exp(")")
+        self.indent += 4
+
+        self.add_exp("(then")
+        self.indent += 4
+        self.add(obj['then'])
+        self.indent -= 4
+        self.add_exp(")")
+        
+        self.add_exp("(else")
+        self.indent += 4
+        self.add(obj['else'])
+        self.indent -= 4
+        self.add_exp(")")
+        
+        self.indent -= 4
+        self.indent -= 4
+        
+        self.add_exp(")")
+
+    def imprt(self, obj,locals):
         '''
         WASM imports work on two level namespace
         '''
@@ -176,6 +231,7 @@ class WasmModule():
         self.indent -= 4
         self.add_exp("))")
         return self
+    
 
     def decl_local(self, local):
         local_type = ''

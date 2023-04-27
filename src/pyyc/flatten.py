@@ -184,6 +184,14 @@ class Flatten:
             return ' == '
         elif isinstance(n, NotEq):
             return ' != '
+        elif isinstance(n, Gt):
+            return ' > '
+        elif isinstance(n, Lt):
+            return ' < '
+        elif isinstance(n, GtE):
+            return ' >= '
+        elif isinstance(n, LtE):
+            return ' <= '
         elif isinstance(n, Not):
             return 'not '
         # crazy nonsense

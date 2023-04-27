@@ -6,7 +6,7 @@ from helper import WasmModule, Type, Stack
 class WatGen():
     def __init__(self):
         self.wat    =  WasmModule()
-        self.fparms =  Stack()
+        self.locals =  Stack()  ## For now we don't have any functions, we will just push the variables to stack which we need to declare
 
     def get_wat(self, n):
         self.visit(n)
@@ -17,9 +17,9 @@ class WatGen():
     
 
     def visit(self, n):
-        ## Traversing the AST AND remove the redundant nodes and convert the lambdas to funcion
-        ## that's the intution of this function
-        ## for now converting assigned lambda to function, Do we need to more ? check with kelly
+        ##  Traverse the AST and convert to json format keys and value. using helper function to convert to webassembly which looks almost similar
+        ##  Done for call functions only. we need to import circle rectangle because we are using from cruntime.
+        ##  currently we can do circle(x,y,z) or rectangle(x,y,h,w)
 
         if isinstance(n, Module):
             ## lets' do the imports ## import the functions from cruntime
@@ -53,7 +53,24 @@ class WatGen():
                  'body': [import_obj, body]
             }}
 
-            self.wat.add(module)
+            #print("Finding all the locals:", self.locals.getAll())
+            self.wat.add(module, self.locals.getAll())
+
+
+        elif isinstance(n, Assign):
+            lval = n.targets[0].id
+            rval = self.visit(n.value)
+
+            self.locals.push({'name': lval, 'type': Type.i32})
+
+            assignment = {
+                'assignment':{
+                   'lval' : lval,
+                   'rval' : rval
+                }
+            }
+
+            return assignment
 
         
         elif isinstance(n, Expr):
@@ -87,6 +104,62 @@ class WatGen():
                 'name': n.id
             }
             return name
+        
+
+        elif isinstance(n, BinOp):
+            add = {
+                'bin_op':{
+                    'op' : 'add',
+                    'left': self.visit(n.left),
+                    'right': self.visit(n.right)
+                }
+            }
+
+            return add
+        
+        elif isinstance(n, UnaryOp):
+            unary_sub = {
+                'unary_op':{
+                    'op' :'sub',
+                    'operand': self.visit(n.operand)
+                }
+            }
+            return unary_sub
+        
+        elif isinstance(n, Compare):
+            ## let's just do bin op only
+            compare = {
+                'bin_op':{
+                    'op'    :  self.visit(n.ops[0]),
+                    'left'  :  self.visit(n.left),
+                    'right' :  self.visit(n.comparators[0])
+                }
+            }
+            return compare
+        
+        elif isinstance(n, If):
+            If_cond = {
+                'if':{
+                    'cond': self.visit(n.test),
+                    'then': [self.visit(b)  for b in n.body],
+                    'else': [self.visit(node) for node in n.orelse]
+                }
+            }
+            print("if condition", If_cond)
+            return If_cond
+
+        elif isinstance(n, Eq):
+            return '=='
+        elif isinstance(n, NotEq):
+            return '!='
+        elif isinstance(n, Gt):
+            return '>'
+        elif isinstance(n, Lt):
+            return '<'
+        elif isinstance(n, GtE):
+            return '>='
+        elif isinstance(n, LtE):
+            return '<='
 
         else:
             return n
