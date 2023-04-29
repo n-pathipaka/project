@@ -13,12 +13,14 @@ class Flatten:
         self.variables = set()
         self.indent = ''
         # Name nodes that are reserved
-        self.reserved_names = ['print', 'eval', 'input', 'int', 'is_int', 'unbox_int', 
+        self.reserved_names = ['print', 'eval', 'input', 'int', 'is_int', 'unbox_int',
                                'box_int', 'box_bool', 'unbox_bool', 'is_bool', 'box_big', 'unbox_big',
                               'create_list', 'set_subscript', 'create_dict', 'equal', 'is_big',
-                              'get_subscript', 'is_true', 'add', 'not_equal', 'TypeError',  'circle', 'rectangle']
-        
-        self.checkCall = ['print', 'set_subscript', 'TypeError', 'circle', 'rectangle']
+                              'get_subscript', 'is_true', 'add', 'not_equal', 'TypeError',  'circle', 'rectangle', 'clear',
+                              'color', 'fill_rectangle', 'fill_circle']
+
+        self.checkCall = ['print', 'set_subscript', 'TypeError', 'circle', 'rectangle', 'clear',
+                          'color', 'fill_rectangle', 'fill_circle']
         # classes that need to be reduced
         # ie if you're one of these classes make a tmp variable and return that instead
         self.flatten_instances = [BinOp, UnaryOp, Call, BoolOp, Compare, Subscript, List, Dict]
@@ -27,7 +29,7 @@ class Flatten:
         self.dont_flatten_args = []
         # consider adding a does something expr, add print
         self.functions = []
-        
+
     def flatten(self, tree):
         print("----- flattening -----")
         self.replace_variables(tree)
@@ -47,7 +49,7 @@ class Flatten:
         #        if not node.id in self.reserved_names:
         #            variables.add(node.id)
         return tree
-    
+
     def make_flattened_prog(self, n, assign=None):
         if isinstance(n, Module):
             for node in n.body:
@@ -116,7 +118,7 @@ class Flatten:
             if n.func.id == 'eval':
                 return 'eval(input())'
             if n.func.id == 'TypeError':
-                return self.make_flattened_prog(Call(Name('error_pyobj', Load()), [Constant("0")])) 
+                return self.make_flattened_prog(Call(Name('error_pyobj', Load()), [Constant("0")]))
             if n.func.id in self.dont_flatten_args:
                 for arg in n.args:
                     line += self.make_flattened_prog(arg)
@@ -226,12 +228,12 @@ class Flatten:
             line += self.make_flattened_prog(n.body)
             self.flattened_program.append(self.indent + line)
             self.flattened_program.append(old_indent + 'else:')
-            
+
             line = self.make_flattened_prog(assign.targets[0])
             line += ' = '
             line += self.make_flattened_prog(n.orelse)
             self.flattened_program.append(self.indent + line)
-            
+
             self.indent = old_indent
         elif isinstance(n, While):
             line = ''
@@ -319,7 +321,7 @@ class Flatten:
         else:
             print(ast.dump(n, indent=4))
             raise Exception('***** Error: unrecognized AST node *****')
-            
+
     # figure out how to make make_temp not just 99% copy of make_flattened_prog
     # because 99% of the lines do the same thing as make_flattened_prog, accept now instead
     # of appending to the file we just make a tmp variable and return that....so it's the same thing
@@ -466,10 +468,10 @@ class Flatten:
         else:
             print(ast.dump(n, indent=4))
             raise Exception("***** unrecognized AST node make_temp *****")
-            
+
     def get_variables(self):
         return self.variables
-    
+
     def replace_variables(self, tree):
         for node in ast.walk(tree):
             if isinstance(node, Name) and node.id not in self.reserved_names:
@@ -478,7 +480,7 @@ class Flatten:
                 node.value = 0 if node.value == False else 1
             if isinstance(node, ast.arg):
                 node.arg = '_' + node.arg
-    
+
     def check_instances(self, n):
         for instance in self.flatten_instances:
             if isinstance(n, instance):

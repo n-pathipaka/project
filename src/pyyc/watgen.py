@@ -11,10 +11,10 @@ class WatGen():
     def get_wat(self, n):
         self.visit(n)
         return self.wat.expressions
-        
 
-        
-    
+
+
+
 
     def visit(self, n):
         ##  Traverse the AST and convert to json format keys and value. using helper function to convert to webassembly which looks almost similar
@@ -39,6 +39,34 @@ class WatGen():
                                 'params' : [{'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}],
                                 'ret'    : {}
                             }
+                        },
+                        'clear':{
+                            'func':{
+                                'fname'  : 'clear',
+                                'params' : [],
+                                'ret'    : {}
+                            }
+                        },
+                        'color': {
+                            'func':{
+                                'fname'  : 'color',
+                                'params' : [{'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}],
+                                'ret'    : {}
+                            }
+                        },
+                        'fill_rectangle': {
+                            'func':{
+                                'fname'  : 'fill_rectangle',
+                                'params' : [{'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}],
+                                'ret'    : {}
+                            }
+                        },
+                        'fill_circle': {
+                            'func':{
+                                'fname'  : 'fill_circle',
+                                'params' : [{'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}],
+                                'ret'    : {}
+                            }
                         }
                     }
                 }
@@ -47,7 +75,7 @@ class WatGen():
             body = []
             for b in n.body:
                 body.append(self.visit(b))
-            
+
 
             module = {'module' : {
                  'body': [import_obj, body]
@@ -72,10 +100,10 @@ class WatGen():
 
             return assignment
 
-        
+
         elif isinstance(n, Expr):
             return self.visit(n.value)
-        
+
         elif isinstance(n, Call):
             ## calling circle, square or rectangle comes under this call function
             ## push all the arguments into stack
@@ -87,7 +115,7 @@ class WatGen():
             }
 
             return call_func
-        
+
 
         elif isinstance(n, Constant):
             const = {
@@ -104,7 +132,7 @@ class WatGen():
                 'name': n.id
             }
             return name
-        
+
 
         elif isinstance(n, BinOp):
             add = {
@@ -116,7 +144,7 @@ class WatGen():
             }
 
             return add
-        
+
         elif isinstance(n, UnaryOp):
             unary_sub = {
                 'unary_op':{
@@ -125,7 +153,7 @@ class WatGen():
                 }
             }
             return unary_sub
-        
+
         elif isinstance(n, Compare):
             ## let's just do bin op only
             compare = {
@@ -136,7 +164,7 @@ class WatGen():
                 }
             }
             return compare
-        
+
         elif isinstance(n, If):
             If_cond = {
                 'if':{
@@ -147,6 +175,15 @@ class WatGen():
             }
             print("if condition", If_cond)
             return If_cond
+
+        elif isinstance(n, While):
+            While_cond = {
+                'while':{
+                    'cond': self.visit(n.test),
+                    'body': [self.visit(b) for b in n.body]
+                }
+            }
+            return While_cond
 
         elif isinstance(n, Eq):
             return '=='
@@ -163,9 +200,3 @@ class WatGen():
 
         else:
             return n
-        
-
-
-        
-
-        

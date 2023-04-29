@@ -8,7 +8,7 @@ def tempVar(body = 'tmp'):
         return body + "_" + str(tempVar.counter)
 
 
-## we need to  kind implement lookup table 
+## we need to  kind implement lookup table
 ## we will store all the current scope variables in a list
 ## if the varible doesn't found in current look back in the previous scope lists
 ## To store scope list, stack would be a good data structure as we need to check in reverse
@@ -30,13 +30,13 @@ class Stack():
 
     def size(self):
         return len(self.list)
-    
+
     def getAll(self):
         return self.list
-    
+
     def is_empty(self):
         return self.list == []
-    
+
 
 class WasmModule():
     '''
@@ -97,8 +97,10 @@ class WasmModule():
                     self.unary_op(obj[attr], locals)
                 elif attr == 'if':
                     self.if_(obj[attr], locals)
-                
-            
+                elif attr == 'while':
+                    self.while_(obj[attr], locals)
+
+
 
     def module(self, obj,locals):
         self.add_exp("(module")
@@ -132,15 +134,15 @@ class WasmModule():
         self.add_exp("(local.get $%s)" % name)
 
     def call(self, obj,locals):
-        ## need to wrap the call function in a explcit function, need to think a better logic , we cannot just call in web assembly 
+        ## need to wrap the call function in a explcit function, need to think a better logic , we cannot just call in web assembly
         ## it should be in explicit function.
-       
+
         self.add_exp("(call $%s" % (obj['fname']))
         self.indent += 4
         self.add(obj['args'],locals)
         self.indent -= 4
         self.add_exp(')')
-        
+
 
     def bin_op(self, obj, locals):
         ## I think we can do greater and less than here only
@@ -160,7 +162,7 @@ class WasmModule():
             self.add_exp("(i32.le_u")
 
 
-        ## load the operands and add 
+        ## load the operands and add
         left = obj['left']
         right = obj['right']
         self.indent += 4
@@ -181,7 +183,7 @@ class WasmModule():
     def if_(self, obj, locals):
         self.add_exp("(if")
         self.indent += 4
-        self.add_exp("(i32.eq") 
+        self.add_exp("(i32.eq")
         self.add(obj['cond'])
         self.add_exp('(i32.const 1)')
         self.add_exp(")")
@@ -192,17 +194,43 @@ class WasmModule():
         self.add(obj['then'])
         self.indent -= 4
         self.add_exp(")")
-        
+
         self.add_exp("(else")
         self.indent += 4
         self.add(obj['else'])
         self.indent -= 4
         self.add_exp(")")
-        
+
         self.indent -= 4
         self.indent -= 4
-        
+
         self.add_exp(")")
+
+    def while_(self, obj, locals):
+        self.add_exp("(block")
+        self.indent += 4
+        self.add_exp("(i32.eq")
+        self.add(obj['cond'])
+        self.add_exp('(i32.const 0)')
+        self.add_exp(")")
+        self.add_exp("br_if 0")
+
+        self.indent += 4
+        self.add_exp('(loop')
+        self.add(obj['body'])
+
+        self.add_exp("(i32.eq")
+        self.add(obj['cond'])
+        self.add_exp('(i32.const 0)')
+        self.add_exp(")")
+        self.add_exp("br_if 1")
+        self.add_exp("br 0")
+        self.add_exp(")")
+        self.indent -= 4
+        self.indent -= 4
+        self.add_exp(")")
+
+
 
     def imprt(self, obj,locals):
         '''
@@ -215,7 +243,7 @@ class WasmModule():
                     if attr == 'func':
                         self.import_func(
                             pobj, cobj, import_object[attr])
-                    
+
 
     def import_func(self, pobj, obj, func):
         fname = func['fname']
@@ -231,7 +259,7 @@ class WasmModule():
         self.indent -= 4
         self.add_exp("))")
         return self
-    
+
 
     def decl_local(self, local):
         local_type = ''

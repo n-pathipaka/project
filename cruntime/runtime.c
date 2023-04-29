@@ -21,7 +21,6 @@ void circle(int x, int y, int radius) {
     }, x, y, radius);
 }
 
-
 EMSCRIPTEN_KEEPALIVE
 void rectangle(int x, int y, int width, int height) {
     EM_ASM({
@@ -33,11 +32,46 @@ void rectangle(int x, int y, int width, int height) {
     }, x, y, width, height);
 }
 
+EMSCRIPTEN_KEEPALIVE
+void clear() {
+  EM_ASM({
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  });
+}
 
+EMSCRIPTEN_KEEPALIVE
+void color(int r, int g, int b) {
+  EM_ASM({
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = "rgb(" + $0 + "," + $1 + "," + $2 + ")";
+  }, r, g, b);
+}
 
+EMSCRIPTEN_KEEPALIVE
+void fill_rectangle(int x, int y, int width, int height) {
+    EM_ASM({
+        var canvas = document.getElementById('canvas');
+        var ctx = canvas.getContext('2d');
+        ctx.beginPath();
+        ctx.fillRect($0, $1, $2, $3);
+        ctx.stroke();
+    }, x, y, width, height);
+}
 
-
-
+EMSCRIPTEN_KEEPALIVE
+void fill_circle(int x, int y, int radius) {
+    EM_ASM({
+        var canvas = document.getElementById('canvas');
+        var ctx = canvas.getContext('2d');
+        ctx.beginPath();
+        ctx.arc($0, $1, $2, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.stroke();
+    }, x, y, radius);
+}
 
 
 
@@ -107,7 +141,7 @@ pyobj inject_float(int f) {
   return ((f >> SHIFT) << SHIFT) | FLOAT_TAG;
 }
 pyobj inject_big(big_pyobj* p) {
-  assert((((long)p) & MASK) == 0); 
+  assert((((long)p) & MASK) == 0);
   return ((long)p) | BIG_TAG;
 }
 /*
@@ -215,7 +249,7 @@ int input() {
   int i;
   scanf("%s", buf);
   i = atoi(buf);
-  return i; 
+  return i;
 }
 
 
@@ -366,7 +400,7 @@ static void print_dict(pyobj dict)
 
 /* This hash function was chosen more or less at random -Jeremy */
 static int hash32shift(int key)
-{  
+{
   key = ~key + (key << 15); /* key = (key << 15) - key - 1; */
   key = key ^ (key >> 12);
   key = key + (key << 2);
@@ -392,17 +426,17 @@ static unsigned int hash_any(void* o)
     switch (b->tag) {
     case LIST: {
       int i;
-      unsigned long h = 0; 
+      unsigned long h = 0;
       for (i = 0; i != b->u.l.len; ++i)
 	h = 5*h + hash_any(&b->u.l.data[i]);
       return h;
     }
     case DICT: {
       struct hashtable_itr* i;
-      unsigned long h = 0; 
+      unsigned long h = 0;
       if (hashtable_count(b->u.d) == 0)
 	return h;
-      i = hashtable_iterator(b->u.d); 
+      i = hashtable_iterator(b->u.d);
       do {
 	h = 5*h + hash_any(hashtable_iterator_value(i));
       } while (hashtable_iterator_advance(i));
@@ -664,7 +698,7 @@ static void print_list(pyobj ls)
     current_list = pyobj_list->u.l.data;
     will_reset = 1;
   }
-  
+
   list l = pyobj_list->u.l;
   printf("[");
   int i;
@@ -678,7 +712,7 @@ static void print_list(pyobj ls)
       printf(", ");
   }
   printf("]");
-  
+
   if(will_reset)
     current_list = NULL;
 }
@@ -703,11 +737,11 @@ big_pyobj* add(big_pyobj* a, big_pyobj* b) {
     case LIST:
       return list_to_big(list_add(a->u.l, b->u.l));
     default:
-      printf("error in add, expected a list\n");      
+      printf("error in add, expected a list\n");
       exit(-1);
     }
   default:
-    printf("error in add, expected a list\n");      
+    printf("error in add, expected a list\n");
     exit(-1);
   }
 }
@@ -827,7 +861,7 @@ int is_true(pyobj v)
       assert(0);
     }
   }
-  } 
+  }
   assert(0);
 }
 
@@ -1003,7 +1037,7 @@ static int inherits_rec(class c1, class c2) {
       if (ret)
         break;
         }
-  } 
+  }
   return ret;
 }
 
@@ -1090,7 +1124,7 @@ pyobj get_attr(pyobj c, char* attr)
     } else {
       return *attribute;
     }
-  }  
+  }
   default:
     printf("error in get attribute, not a class or object\n");
     exit(-1);
@@ -1105,9 +1139,9 @@ pyobj set_attr(pyobj obj, char* attr, pyobj val)
     v = (pyobj *)malloc(sizeof(pyobj));
     strcpy(k, attr);
     *v = val;
-    
+
     struct hashtable* attrs;
-    
+
     big_pyobj* b = project_big(obj);
     switch (b->tag) {
     case CLASS:

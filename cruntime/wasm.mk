@@ -7,7 +7,7 @@ all: pyruntime.html
 pyruntime.html: $(FILES)
 	emcc -o $@ $(FILES) \
 	-s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
-	-s EXPORTED_FUNCTIONS='["_circle","_rectangle"]'
+	-s EXPORTED_FUNCTIONS='["_circle","_rectangle","_clear","_fill_circle","_fill_rectangle"]'
 	mv pyruntime.html ../wasmlib/
 	mv pyruntime.js ../wasmlib/
 	mv pyruntime.wasm ../wasmlib/
