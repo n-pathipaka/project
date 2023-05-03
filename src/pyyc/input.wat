@@ -29,14 +29,14 @@
         (param  i32)
     ))
     (import "cruntime" "rotate" (func $rotate
-        (param i32)
+        (param  i32)
     ))
     (import "cruntime" "line" (func $line
-        (param i32)
-        (param i32)
-        (param i32)
-        (param i32)
-        (param i32)
+        (param  i32)
+        (param  i32)
+        (param  i32)
+        (param  i32)
+        (param  i32)
     ))
     (func $display
         (local $_window_width i32)
