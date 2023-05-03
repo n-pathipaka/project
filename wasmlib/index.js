@@ -1,8 +1,6 @@
 // Allocate some memory for the moodule. Initial size is specified in pages of 16 kiB.
 //const memory = new WebAssembly.Memory( { initial: 16 } );
 
-// Everything we want to pass to our module during initialisation. The names of the keys
-// are not important, so long as our WASM module knows to look for them.
 const imports = {
 
     cruntime:{

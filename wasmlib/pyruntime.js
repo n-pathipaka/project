@@ -104,12 +104,12 @@ readBinary = (filename) => {
   return ret;
 };
 
-readAsync = (filename, onload, onerror, binary = true) => {
+readAsync = (filename, onload, onerror) => {
   // See the comment in the `read_` function.
   filename = isFileURI(filename) ? new URL(filename) : nodePath.normalize(filename);
-  fs.readFile(filename, binary ? undefined : 'utf8', (err, data) => {
+  fs.readFile(filename, function(err, data) {
     if (err) onerror(err);
-    else onload(binary ? data.buffer : data);
+    else onload(data.buffer);
   });
 };
 
@@ -124,7 +124,7 @@ readAsync = (filename, onload, onerror, binary = true) => {
     module['exports'] = Module;
   }
 
-  process.on('uncaughtException', (ex) => {
+  process.on('uncaughtException', function(ex) {
     // suppress ExitStatus exceptions from showing an error
     if (ex !== 'unwind' && !(ex instanceof ExitStatus) && !(ex.context instanceof ExitStatus)) {
       throw ex;
@@ -138,7 +138,7 @@ readAsync = (filename, onload, onerror, binary = true) => {
   // See https://nodejs.org/api/cli.html#cli_unhandled_rejections_mode
   var nodeMajor = process.versions.node.split(".")[0];
   if (nodeMajor < 15) {
-    process.on('unhandledRejection', (reason) => { throw reason; });
+    process.on('unhandledRejection', function(reason) { throw reason; });
   }
 
   quit_ = (status, toThrow) => {
@@ -146,7 +146,7 @@ readAsync = (filename, onload, onerror, binary = true) => {
     throw toThrow;
   };
 
-  Module['inspect'] = () => '[Emscripten Module object]';
+  Module['inspect'] = function () { return '[Emscripten Module object]'; };
 
 } else
 if (ENVIRONMENT_IS_SHELL) {
@@ -154,12 +154,12 @@ if (ENVIRONMENT_IS_SHELL) {
   if ((typeof process == 'object' && typeof require === 'function') || typeof window == 'object' || typeof importScripts == 'function') throw new Error('not compiled for this environment (did you build to HTML and try to run it not on the web, or set ENVIRONMENT to something - like node - and run it someplace else - like on the web?)');
 
   if (typeof read != 'undefined') {
-    read_ = (f) => {
+    read_ = function shell_read(f) {
       return read(f);
     };
   }
 
-  readBinary = (f) => {
+  readBinary = function readBinary(f) {
     let data;
     if (typeof readbuffer == 'function') {
       return new Uint8Array(readbuffer(f));
@@ -169,7 +169,7 @@ if (ENVIRONMENT_IS_SHELL) {
     return data;
   };
 
-  readAsync = (f, onload, onerror) => {
+  readAsync = function readAsync(f, onload, onerror) {
     setTimeout(() => onload(readBinary(f)), 0);
   };
 
@@ -588,7 +588,7 @@ function addRunDependency(id) {
     runDependencyTracking[id] = 1;
     if (runDependencyWatcher === null && typeof setInterval != 'undefined') {
       // Check for missing dependencies every few seconds
-      runDependencyWatcher = setInterval(() => {
+      runDependencyWatcher = setInterval(function() {
         if (ABORT) {
           clearInterval(runDependencyWatcher);
           runDependencyWatcher = null;
@@ -760,33 +760,35 @@ function getBinaryPromise(binaryFile) {
     if (typeof fetch == 'function'
       && !isFileURI(binaryFile)
     ) {
-      return fetch(binaryFile, { credentials: 'same-origin' }).then((response) => {
+      return fetch(binaryFile, { credentials: 'same-origin' }).then(function(response) {
         if (!response['ok']) {
           throw "failed to load wasm binary file at '" + binaryFile + "'";
         }
         return response['arrayBuffer']();
-      }).catch(() => getBinary(binaryFile));
+      }).catch(function () {
+          return getBinary(binaryFile);
+      });
     }
     else {
       if (readAsync) {
         // fetch is not available or url is file => try XHR (readAsync uses XHR internally)
-        return new Promise((resolve, reject) => {
-          readAsync(binaryFile, (response) => resolve(new Uint8Array(/** @type{!ArrayBuffer} */(response))), reject)
+        return new Promise(function(resolve, reject) {
+          readAsync(binaryFile, function(response) { resolve(new Uint8Array(/** @type{!ArrayBuffer} */(response))) }, reject)
         });
       }
     }
   }
 
   // Otherwise, getBinary should be able to get it synchronously
-  return Promise.resolve().then(() => getBinary(binaryFile));
+  return Promise.resolve().then(function() { return getBinary(binaryFile); });
 }
 
 function instantiateArrayBuffer(binaryFile, imports, receiver) {
-  return getBinaryPromise(binaryFile).then((binary) => {
+  return getBinaryPromise(binaryFile).then(function(binary) {
     return WebAssembly.instantiate(binary, imports);
-  }).then((instance) => {
+  }).then(function (instance) {
     return instance;
-  }).then(receiver, (reason) => {
+  }).then(receiver, function(reason) {
     err('failed to asynchronously prepare wasm: ' + reason);
 
     // Warn on some common problems.
@@ -811,7 +813,7 @@ function instantiateAsync(binary, binaryFile, imports, callback) {
       //   https://github.com/emscripten-core/emscripten/pull/16917
       !ENVIRONMENT_IS_NODE &&
       typeof fetch == 'function') {
-    return fetch(binaryFile, { credentials: 'same-origin' }).then((response) => {
+    return fetch(binaryFile, { credentials: 'same-origin' }).then(function(response) {
       // Suppress closure warning here since the upstream definition for
       // instantiateStreaming only allows Promise<Repsponse> rather than
       // an actual Response.
@@ -1015,7 +1017,9 @@ var ASM_CONSTS = {
  65983: () => { var canvas = document.getElementById('canvas'); var ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); },  
  66120: ($0, $1, $2) => { var canvas = document.getElementById('canvas'); var ctx = canvas.getContext('2d'); ctx.fillStyle = "rgb(" + $0 + "," + $1 + "," + $2 + ")"; },  
  66264: ($0, $1, $2, $3) => { var canvas = document.getElementById('canvas'); var ctx = canvas.getContext('2d'); ctx.beginPath(); ctx.fillRect($0, $1, $2, $3); ctx.stroke(); },  
- 66412: ($0, $1, $2) => { var canvas = document.getElementById('canvas'); var ctx = canvas.getContext('2d'); ctx.beginPath(); ctx.arc($0, $1, $2, 0, 2 * Math.PI); ctx.fill(); ctx.stroke(); }
+ 66412: ($0, $1, $2) => { var canvas = document.getElementById('canvas'); var ctx = canvas.getContext('2d'); ctx.beginPath(); ctx.arc($0, $1, $2, 0, 2 * Math.PI); ctx.fill(); ctx.stroke(); },  
+ 66579: ($0) => { var canvas = document.getElementById('canvas'); var ctx = canvas.getContext('2d'); ctx.rotate($0); },  
+ 66682: ($0, $1, $2, $3, $4) => { var canvas = document.getElementById('canvas'); var ctx = canvas.getContext('2d'); ctx.lineWidth = $4; ctx.beginPath(); ctx.moveTo($0, $1); ctx.lineTo($2, $3); ctx.stroke(); }
 };
 
 
@@ -1074,7 +1078,7 @@ var ASM_CONSTS = {
       case 'i8': HEAP8[((ptr)>>0)] = value; break;
       case 'i16': HEAP16[((ptr)>>1)] = value; break;
       case 'i32': HEAP32[((ptr)>>2)] = value; break;
-      case 'i64': (tempI64 = [value>>>0,(tempDouble=value,(+(Math.abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? (+(Math.floor((tempDouble)/4294967296.0)))>>>0 : (~~((+(Math.ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)], HEAP32[((ptr)>>2)] = tempI64[0],HEAP32[(((ptr)+(4))>>2)] = tempI64[1]); break;
+      case 'i64': (tempI64 = [value>>>0,(tempDouble=value,(+(Math.abs(tempDouble))) >= 1.0 ? (tempDouble > 0.0 ? ((Math.min((+(Math.floor((tempDouble)/4294967296.0))), 4294967295.0))|0)>>>0 : (~~((+(Math.ceil((tempDouble - +(((~~(tempDouble)))>>>0))/4294967296.0)))))>>>0) : 0)],HEAP32[((ptr)>>2)] = tempI64[0],HEAP32[(((ptr)+(4))>>2)] = tempI64[1]); break;
       case 'float': HEAPF32[((ptr)>>2)] = value; break;
       case 'double': HEAPF64[((ptr)>>3)] = value; break;
       case '*': HEAPU32[((ptr)>>2)] = value; break;
@@ -1209,7 +1213,7 @@ var ASM_CONSTS = {
      * @param {number} ptr
      * @param {number=} maxBytesToRead - An optional length that specifies the
      *   maximum number of bytes to read. You can omit this parameter to scan the
-     *   string until the first 0 byte. If maxBytesToRead is passed, and the string
+     *   string until the first   byte. If maxBytesToRead is passed, and the string
      *   at [ptr, ptr+maxBytesToReadr[ contains a null byte in the middle, then the
      *   string will cut short at that byte index (i.e. maxBytesToRead will not
      *   produce a string of exact length [ptr, ptr+maxBytesToRead[) N.B. mixing
@@ -1429,6 +1433,10 @@ var _color = Module["_color"] = createExportWrapper("color");
 var _fill_rectangle = Module["_fill_rectangle"] = createExportWrapper("fill_rectangle");
 /** @type {function(...*):?} */
 var _fill_circle = Module["_fill_circle"] = createExportWrapper("fill_circle");
+/** @type {function(...*):?} */
+var _rotate = Module["_rotate"] = createExportWrapper("rotate");
+/** @type {function(...*):?} */
+var _line = Module["_line"] = createExportWrapper("line");
 /** @type {function(...*):?} */
 var ___errno_location = createExportWrapper("__errno_location");
 /** @type {function(...*):?} */

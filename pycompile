@@ -32,5 +32,5 @@ if os.path.isfile('wasmlib/pyruntime.wasm') == False:
     print('Compiling WASM runtime...')
     os.system('make -C cruntime wasm')
 print('Converting WAT to WASM...')
-os.system('wat2wasm.exe ' + 'src/pyyc/input' + '.wat' + ' -o ' + 'input' + '.wasm')
+os.system('wat2wasm ' + 'src/pyyc/input' + '.wat' + ' -o ' + 'input' + '.wasm')
 os.system('mv ' + 'input' + '.wasm ' + '  test/' )
