@@ -17,10 +17,10 @@ class Flatten:
                                'box_int', 'box_bool', 'unbox_bool', 'is_bool', 'box_big', 'unbox_big',
                               'create_list', 'set_subscript', 'create_dict', 'equal', 'is_big',
                               'get_subscript', 'is_true', 'add', 'not_equal', 'TypeError',  'circle', 'rectangle', 'clear',
-                              'color', 'fill_rectangle', 'fill_circle']
+                              'color', 'fill_rectangle', 'fill_circle', 'rotate', 'line']
 
         self.checkCall = ['print', 'set_subscript', 'TypeError', 'circle', 'rectangle', 'clear',
-                          'color', 'fill_rectangle', 'fill_circle']
+                          'color', 'fill_rectangle', 'fill_circle', 'rotate', 'line']
         # classes that need to be reduced
         # ie if you're one of these classes make a tmp variable and return that instead
         self.flatten_instances = [BinOp, UnaryOp, Call, BoolOp, Compare, Subscript, List, Dict]
@@ -135,6 +135,10 @@ class Flatten:
             return ' + '
         elif isinstance(n, USub):
             return '-'
+        elif isinstance(n, Div):
+            return '/'
+        elif isinstance(n, Mult):
+            return '*'
         elif isinstance(n, Load):
             return
         elif isinstance(n, Store):

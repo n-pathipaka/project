@@ -67,6 +67,20 @@ class WatGen():
                                 'params' : [{'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}],
                                 'ret'    : {}
                             }
+                        },
+                        'rotate': {
+                            'func':{
+                                'fname' : 'rotate',
+                                'params' : [{'type': Type.i32}],
+                                'ret': {}
+                            }
+                        },
+                        'line': {
+                            'func':{
+                                'fname' : 'line',
+                                'params' : [{'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}],
+                                'ret' : {}
+                            }
                         }
                     }
                 }
@@ -135,15 +149,15 @@ class WatGen():
 
 
         elif isinstance(n, BinOp):
-            add = {
+            binop = {
                 'bin_op':{
-                    'op' : 'add',
+                    'op' : self.visit(n.op),
                     'left': self.visit(n.left),
                     'right': self.visit(n.right)
                 }
             }
 
-            return add
+            return binop
 
         elif isinstance(n, UnaryOp):
             unary_sub = {
@@ -197,6 +211,14 @@ class WatGen():
             return '>='
         elif isinstance(n, LtE):
             return '<='
+        elif isinstance(n, Add):
+            return 'add'
+        elif isinstance(n, Div):
+            return '/'
+        elif isinstance(n, Mult):
+            return '*'
 
         else:
+            print("Unrecognized watgen")
+            print(ast.dump(n, indent=4))
             return n

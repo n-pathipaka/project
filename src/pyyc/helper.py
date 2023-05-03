@@ -160,7 +160,10 @@ class WasmModule():
             self.add_exp("(i32.ge_u")
         if obj['op'] == '<=':
             self.add_exp("(i32.le_u")
-
+        if obj['op'] == '/':
+            self.add_exp("(i32.div_u")
+        if obj['op'] == '*':
+            self.add_exp("(i32.mul")
 
         ## load the operands and add
         left = obj['left']

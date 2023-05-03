@@ -73,7 +73,27 @@ void fill_circle(int x, int y, int radius) {
     }, x, y, radius);
 }
 
+EMSCRIPTEN_KEEPALIVE
+void rotate(int angle) {
+  EM_ASM({
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+    ctx.rotate($0);
+  }, angle);
+}
 
+EMSCRIPTEN_KEEPALIVE
+void line(int x1, int y1, int x2, int y2, int width) {
+  EM_ASM({
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+    ctx.lineWidth = $4;
+    ctx.beginPath();
+    ctx.moveTo($0, $1);
+    ctx.lineTo($2, $3);
+    ctx.stroke();
+  }, x1, y1, x2, y2, width);
+}
 
 
 

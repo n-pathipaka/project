@@ -11,7 +11,9 @@ const imports = {
         clear     :  Module.cwrap("clear", null, []),
         color     :  Module.cwrap("color", null, ["number", "number", "number"]),
         fill_circle : Module.cwrap("fill_circle", null, ["number", "number", "number"]),
-        fill_rectangle : Module.cwrap("fill_rectangle", null, ["number", "number", "number", "number"])
+        fill_rectangle : Module.cwrap("fill_rectangle", null, ["number", "number", "number", "number"]),
+        rotate : Module.cwrap("rotate", null, ["number"]),
+        line : Module.cwrap("line", null, ["number", "number", "number", "number", "number"])
     }
 };
 
