@@ -143,6 +143,8 @@ class Flatten:
             return
         elif isinstance(n, Store):
             return
+        elif isinstance(n, Sub):
+            return ' - '
         # end of p0
         # p0a
         # this is actually kind of the same as binop, except it can for some reason

@@ -217,6 +217,8 @@ class WatGen():
             return '/'
         elif isinstance(n, Mult):
             return '*'
+        elif isinstance(n, Sub):
+            return ' - '
 
         else:
             print("Unrecognized watgen")
