@@ -1,51 +1,10 @@
-## we all add the helper functions here to use acrosss files ###
-
-def tempVar(body = 'tmp'):
-        ## generate temporary variables
-        if not hasattr(tempVar, "counter"):
-            tempVar.counter = 0
-        tempVar.counter += 1
-        return body + "_" + str(tempVar.counter)
-
-
-## we need to  kind implement lookup table
-## we will store all the current scope variables in a list
-## if the varible doesn't found in current look back in the previous scope lists
-## To store scope list, stack would be a good data structure as we need to check in reverse
-class Stack():
-    def __init__(self):
-        self.list = []
-
-    def push(self, val):
-        self.list.append(val)
-
-    def pop(self):
-        return self.list.pop()
-
-    def get(self, index):
-        return self.list[index]
-
-    def top(self):
-        return self.list[len(self.list)-1]
-
-    def size(self):
-        return len(self.list)
-
-    def getAll(self):
-        return self.list
-
-    def is_empty(self):
-        return self.list == []
-
-
-class WasmModule():
+class WatConverter():
     '''
       generartes wat file
     '''
 
     def __init__(self):
         self.expressions = []
-        self.fstack = Stack()
         self.indent = 0
 
     def add_exp(self, exp):
@@ -311,5 +270,3 @@ class WasmModule():
 class Type:
     i32 = 'i32'
     i64 = 'i64'
-    f32 = 'f32'
-    f64 = 'f64'

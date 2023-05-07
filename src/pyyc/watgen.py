@@ -1,19 +1,17 @@
 
 import ast
 from ast import *
-from helper import WasmModule, Type, Stack
+from helper import  WatConverter, Type
+import watfunc
 
 class WatGen():
     def __init__(self):
-        self.wat    =  WasmModule()
-        self.locals =  Stack()  ## For now we don't have any functions, we will just push the variables to stack which we need to declare
+        self.wat    =   WatConverter()
+        self.locals =  []
 
     def get_wat(self, n):
         self.visit(n)
         return self.wat.expressions
-
-
-
 
 
     def visit(self, n):
@@ -23,68 +21,6 @@ class WatGen():
 
         if isinstance(n, Module):
             ## lets' do the imports ## import the functions from cruntime
-            import_obj = {
-                'import':{
-                    'cruntime':{
-                        'circle':{
-                            'func':{
-                                'fname' : 'circle',
-                                'params': [{'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}],
-                                'ret'   : {}
-                            }
-                        },
-                        'rectangle':{
-                            'func':{
-                                'fname'  : 'rectangle',
-                                'params' : [{'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}],
-                                'ret'    : {}
-                            }
-                        },
-                        'clear':{
-                            'func':{
-                                'fname'  : 'clear',
-                                'params' : [],
-                                'ret'    : {}
-                            }
-                        },
-                        'color': {
-                            'func':{
-                                'fname'  : 'color',
-                                'params' : [{'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}],
-                                'ret'    : {}
-                            }
-                        },
-                        'fill_rectangle': {
-                            'func':{
-                                'fname'  : 'fill_rectangle',
-                                'params' : [{'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}],
-                                'ret'    : {}
-                            }
-                        },
-                        'fill_circle': {
-                            'func':{
-                                'fname'  : 'fill_circle',
-                                'params' : [{'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}],
-                                'ret'    : {}
-                            }
-                        },
-                        'rotate': {
-                            'func':{
-                                'fname' : 'rotate',
-                                'params' : [{'type': Type.i32}],
-                                'ret': {}
-                            }
-                        },
-                        'line': {
-                            'func':{
-                                'fname' : 'line',
-                                'params' : [{'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}, {'type': Type.i32}],
-                                'ret' : {}
-                            }
-                        }
-                    }
-                }
-            }
 
             body = []
             for b in n.body:
@@ -92,18 +28,17 @@ class WatGen():
 
 
             module = {'module' : {
-                 'body': [import_obj, body]
+                 'body': [watfunc.watfunc, body]
             }}
 
-            #print("Finding all the locals:", self.locals.getAll())
-            self.wat.add(module, self.locals.getAll())
+            self.wat.add(module, self.locals)
 
 
         elif isinstance(n, Assign):
             lval = n.targets[0].id
             rval = self.visit(n.value)
 
-            self.locals.push({'name': lval, 'type': Type.i32})
+            self.locals.append({'name': lval, 'type': Type.i32})
 
             assignment = {
                 'assignment':{
