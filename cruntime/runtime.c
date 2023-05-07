@@ -9,6 +9,16 @@
 
 /*  Adding canvas support */
 
+EM_JS(void, createCanvasAndContext, (), {
+    // var canvas = document.createElement('canvas');
+    // canvas.id = 'canvas';
+    // document.body.appendChild(canvas);
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+    Module.canvas = canvas;
+    Module.ctx = ctx;
+});
+
 
 EMSCRIPTEN_KEEPALIVE
 void circle(int x, int y, int radius) {
