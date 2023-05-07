@@ -1,20 +1,27 @@
 MAKEFLAGS += --no-builtin-rules
+CC := emcc
+CFLAGS := -c
 CFILES := $(wildcard *.c)
 FILES := $(patsubst %.c,%.o,$(CFILES))
 
-all: pyruntime.html
 
-pyruntime.html: $(FILES)
+TARGET := pyruntime.html
+EXPORTED_FUNCS := "_circle","_rectangle","_clear","_fill_circle", "_fill_rectangle","_rotate","_line"
+LIB_DIR := ../wasmlib/
+
+all: $(TARGET)
+
+$(TARGET) : $(FILES)
 	emcc -o $@ $(FILES) \
 	-s EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
-	-s EXPORTED_FUNCTIONS='["_circle","_rectangle","_clear","_fill_circle","_fill_rectangle","_rotate","_line"]'
-	mv pyruntime.html ../wasmlib/
-	mv pyruntime.js ../wasmlib/
-	mv pyruntime.wasm ../wasmlib/
+	-s EXPORTED_FUNCTIONS='[$(EXPORTED_FUNCS)]'
+	mv $(TARGET) $(LIB_DIR)
+	mv $(TARGET:.html=.js)   $(LIB_DIR)
+	mv $(TARGET:.html=.wasm)  $(LIB_DIR)
 	rm -f ./*.o
 
 %.o : %.c
-	emcc -c $< -o $@
+	$(CC) $(CFLAGS) $< -o $@
 
 clean:
 	@echo "clean"
