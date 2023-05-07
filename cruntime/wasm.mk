@@ -1,8 +1,7 @@
 MAKEFLAGS += --no-builtin-rules
 CC := emcc
 CFLAGS := -c
-CFILES := $(wildcard *.c)
-FILES := $(patsubst %.c,%.o,$(CFILES))
+FILES := runtime.c
 
 
 TARGET := pyruntime.html
@@ -25,5 +24,4 @@ $(TARGET) : $(FILES)
 
 clean:
 	@echo "clean"
-	@echo $(FILES)
-	rm -f ./*.o ./*.wasm ./*.js ./*.html
+	rm -f $(LIB_DIR)$(TARGET) $(LIB_DIR)$(TARGET:.html=.js) $(LIB_DIR)$(TARGET:.html=.wasm)
