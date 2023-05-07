@@ -7,7 +7,7 @@ FILES := $(patsubst %.c,%.o,$(CFILES))
 
 TARGET := pyruntime.html
 EXPORTED_FUNCS := "_circle","_rectangle","_clear","_fill_circle", "_fill_rectangle","_rotate","_line"
-LIB_DIR := ../wasmlib/
+LIB_DIR := ../wasmfiles/
 
 all: $(TARGET)
 
